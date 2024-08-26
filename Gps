@@ -1,0 +1,67 @@
+import time
+import random
+import hashlib
+
+class Transaction:
+    def __init__(self, sender, receiver, amount, geolocation=None):
+        self.sender = sender
+        self.receiver = receiver
+        self.amount = amount
+        self.timestamp = time.time()
+        self.geolocation = geolocation  # Optional geolocation data
+        self.tx_id = self.generate_tx_id()
+
+    def generate_tx_id(self):
+        # Create a unique transaction ID using a hash of the transaction data
+        tx_data = f"{self.sender}{self.receiver}{self.amount}{self.timestamp}{self.geolocation}"
+        return hashlib.sha256(tx_data.encode()).hexdigest()
+
+class Geolocation:
+    @staticmethod
+    def get_random_geolocation():
+        # Simulate fetching the geolocation by generating random coordinates
+        latitude = random.uniform(-90, 90)
+        longitude = random.uniform(-180, 180)
+        return {"latitude": latitude, "longitude": longitude}
+
+class Wallet:
+    def __init__(self, owner):
+        self.owner = owner
+        self.balance = 0
+        self.transactions = []
+
+    def add_funds(self, amount):
+        self.balance += amount
+
+    def send_funds(self, receiver_wallet, amount, log_geolocation=False):
+        if self.balance >= amount:
+            self.balance -= amount
+            receiver_wallet.add_funds(amount)
+            geolocation = None
+
+            if log_geolocation:
+                geolocation = Geolocation.get_random_geolocation()
+
+            # Create the transaction and log it
+            transaction = Transaction(self.owner, receiver_wallet.owner, amount, geolocation)
+            self.transactions.append(transaction)
+            receiver_wallet.transactions.append(transaction)
+
+            print(f"Transaction from {self.owner} to {receiver_wallet.owner} for {amount} BTC.")
+            print(f"Geolocation Data: {geolocation if geolocation else 'Not logged'}")
+            print(f"Transaction ID: {transaction.tx_id}\n")
+        else:
+            print("Insufficient funds!")
+
+# Simulated usage
+alice_wallet = Wallet("Alice")
+bob_wallet = Wallet("Bob")
+
+# Alice adds funds to her wallet
+alice_wallet.add_funds(10)
+
+# Alice sends funds to Bob with geolocation logging enabled
+alice_wallet.send_funds(bob_wallet, 3, log_geolocation=True)
+
+# Alice sends funds to Bob without geolocation logging
+alice_wallet.send_funds(bob_wallet, 2, log_geolocation=False)
